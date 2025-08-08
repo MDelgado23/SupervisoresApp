@@ -48,8 +48,7 @@ En muchas empresas que dependen de la supervisión de personal en campo, los rep
   - Horas de supervisión, apoyo y traslado.
 - **Roles de usuario**:
   - `gerente` → Acceso total.
-  - `controlador` → Crea y edita sus reportes.
-  - `supervisor` → Visualización y seguimiento.
+  - `controlador/supervisor` → Crea y edita sus reportes.
 
 ---
 
