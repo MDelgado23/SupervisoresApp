@@ -205,78 +205,93 @@ export class EditarReporteComponent implements OnInit {
   }
 
   validarDetalle(detalle: ReporteDetalle, index: number): string | null {
-    if (!detalle.objetivoId || !detalle.vigiladorId || !detalle.actividadId) {
-      return 'Todos los campos del detalle son obligatorios';
-    }
-
-    if (!detalle.horaEntrada || !detalle.horaSalida) {
-      return 'Debe completar la hora de entrada y salida';
-    }
-
-    const entrada = this.convertirAHora(detalle.horaEntrada);
-    const salida = this.convertirAHora(detalle.horaSalida);
-    const horaInicio = this.convertirAHora(this.reporte.horaInicio);
-
-    if (isNaN(entrada) || isNaN(salida)) {
-      return 'Formato de hora inválido';
-    }
-
-    if (entrada < horaInicio) {
-      return 'La hora de entrada no puede ser anterior a la hora de inicio del reporte';
-    }
-
-    if (salida <= entrada) {
-      return 'La hora de salida debe ser posterior a la entrada';
-    }
-
-    // 🔁 Validar que no se solape con otros detalles
-    for (let i = 0; i < this.detalleReportes.length; i++) {
-      if (i === index) continue;
-
-      const otro = this.detalleReportes[i];
-      if (!otro.horaEntrada || !otro.horaSalida) continue;
-
-      const entradaOtro = this.convertirAHora(otro.horaEntrada);
-      const salidaOtro = this.convertirAHora(otro.horaSalida);
-
-      const seSolapan =
-        (entrada >= entradaOtro && entrada < salidaOtro) ||
-        (salida > entradaOtro && salida <= salidaOtro) ||
-        (entrada <= entradaOtro && salida >= salidaOtro);
-
-      if (seSolapan) {
-        return `El detalle se superpone con el detalle #${i + 1} (${
-          otro.horaEntrada
-        } - ${otro.horaSalida})`;
-      }
-    }
-
-    // ✅ Mismo vigilador puede aparecer varias veces en el mismo objetivo
-    // 🚫 Pero no puede estar en dos objetivos distintos
-    for (let i = 0; i < this.detalleReportes.length; i++) {
-      if (i === index) continue;
-
-      const otro = this.detalleReportes[i];
-      if (
-        otro.vigiladorId === detalle.vigiladorId &&
-        otro.objetivoId !== detalle.objetivoId
-      ) {
-        return `El vigilador ya está asignado a otro objetivo en el detalle #${
-          i + 1
-        }`;
-      }
-    }
-
-    // ✅ Validar que cada calificación esté entre 0 y 5
-    for (const key of this.calificacionKeys) {
-      const valor = (detalle as any).calificacion?.[key];
-      if (valor < 0 || valor > 5) {
-        return `La calificación "${this.calificacionLabels[key]}" debe estar entre 0 y 5`;
-      }
-    }
-
-    return null;
+  // Campos obligatorios básicos
+  if (!detalle.objetivoId || !detalle.vigiladorId || !detalle.actividadId) {
+    return 'Todos los campos del detalle son obligatorios';
   }
+
+  if (!detalle.horaEntrada || !detalle.horaSalida) {
+    return 'Debe completar la hora de entrada y salida';
+  }
+
+  // Validación de formato/rango de hora
+  if (!this.esHoraValida(detalle.horaEntrada) || !this.esHoraValida(detalle.horaSalida)) {
+    return 'Formato de hora inválido (use HH:mm o HH:mm:ss)';
+  }
+
+  // Normalización a minutos
+  const entrada = this.convertirAHora(detalle.horaEntrada);
+  const salida  = this.convertirAHora(detalle.horaSalida);
+  const inicioReporte = this.reporte?.horaInicio ? this.convertirAHora(this.reporte.horaInicio) : NaN;
+
+  // Hora de entrada no puede ser antes del inicio del reporte (si existe)
+  if (!isNaN(inicioReporte) && entrada < inicioReporte) {
+    return 'La hora de entrada no puede ser anterior a la hora de inicio del reporte';
+  }
+
+  // Reglas de orden de horas dentro del mismo detalle (mismo día)
+  if (salida === entrada) {
+    return 'La hora de salida no puede ser igual a la de entrada';
+  }
+  if (salida < entrada) {
+    // Si NO querés permitir “pasa medianoche” dentro de un detalle:
+    return 'La hora de salida debe ser posterior a la hora de entrada';
+    // Si SÍ querés permitir cruce de medianoche, comentá la línea de arriba y descomentá estas:
+    // const salidaAjustada = salida + 24 * 60;
+    // (y usar salidaAjustada en el chequeo de solape de abajo para este detalle)
+  }
+
+  // 🔁 Validar solapes con otros detalles del array
+  for (let i = 0; i < this.detalleReportes.length; i++) {
+    if (i === index) continue;
+
+    const otro = this.detalleReportes[i];
+    if (!otro?.horaEntrada || !otro?.horaSalida) continue;
+
+    // Si ambos tienen id y coinciden, es el mismo registro
+    if (detalle.id && otro.id && detalle.id === otro.id) continue;
+
+    if (!this.esHoraValida(otro.horaEntrada) || !this.esHoraValida(otro.horaSalida)) continue;
+
+    const entradaOtro = this.convertirAHora(otro.horaEntrada);
+    const salidaOtro  = this.convertirAHora(otro.horaSalida);
+
+    // Mismo criterio semi-abierto [inicio, fin)
+    const haySolape = this.rangosSeSolapan(entrada, salida, entradaOtro, salidaOtro);
+
+    if (haySolape) {
+      return `El detalle se superpone con el detalle #${i + 1} (${otro.horaEntrada} - ${otro.horaSalida})`;
+    }
+  }
+
+  // 🚫 Mismo vigilador no puede estar en dos objetivos distintos (en cualquier momento del reporte)
+  for (let i = 0; i < this.detalleReportes.length; i++) {
+    if (i === index) continue;
+
+    const otro = this.detalleReportes[i];
+    if (!otro) continue;
+
+    // Si ambos tienen id y coinciden, ignorar
+    if (detalle.id && otro.id && detalle.id === otro.id) continue;
+
+    if (otro.vigiladorId === detalle.vigiladorId && otro.objetivoId !== detalle.objetivoId) {
+      return `El vigilador ya está asignado a otro objetivo en el detalle #${i + 1}`;
+    }
+  }
+
+  // ✅ Validar que cada calificación esté entre 0 y 5 (y numérica)
+  for (const key of this.calificacionKeys) {
+    const valor = (detalle as any)?.calificacion?.[key];
+    if (valor == null || isNaN(Number(valor))) {
+      return `La calificación "${this.calificacionLabels[key]}" es obligatoria`;
+    }
+    if (valor < 0 || valor > 5) {
+      return `La calificación "${this.calificacionLabels[key]}" debe estar entre 0 y 5`;
+    }
+  }
+
+  return null;
+}
 
   finalizarSupervision() {
     if (this.detalleActual) {
@@ -340,7 +355,7 @@ export class EditarReporteComponent implements OnInit {
 
   guardarCambios() {
     this.loadingService.cargar(() => {
-      this.toastr.success('Reporte actualizado con éxito');
+      
     });
 
     const payload: any = {
@@ -382,6 +397,13 @@ export class EditarReporteComponent implements OnInit {
     this.reportesService.updateReporte(this.reporteId, payload).subscribe({
       next: () => {
         this.loadingService.notificarCargaRealCompletada();
+
+         const msg = this.reporte.finalizado
+        ? 'Reporte finalizado con éxito'
+        : 'Reporte actualizado con éxito';
+      this.toastr.success(msg);
+
+        this.recargarVista(); 
       },
       error: (err) => {
         this.loadingService.notificarCargaRealCompletada(); // 🔁 para evitar spinner infinito en errores
@@ -632,6 +654,7 @@ export class EditarReporteComponent implements OnInit {
         detalle.expandido = false;
         if (!detalle.id && res?.id) detalle.id = res.id;
         this.loadingService.notificarCargaRealCompletada(); // 🔁 apagamos el spinner
+        this.recargarVista(); 
       },
       error: (err: any) => {
         console.error('❌ Error al guardar el detalle:', err);
@@ -734,10 +757,33 @@ export class EditarReporteComponent implements OnInit {
     return null;
   }
 
-  convertirAHora(hora: string): number {
-    const [h, m] = hora.split(':').map(Number);
-    return h * 60 + m;
-  }
+  /** Devuelve minutos totales desde 00:00. Acepta HH:mm o HH:mm:ss. Si es inválida => NaN */
+private convertirAHora(hora: string | null | undefined): number {
+  if (!hora) return NaN;
+  const h = hora.trim();
+  // HH:mm o HH:mm:ss
+  const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(h);
+  if (!m) return NaN;
+
+  const hh = Number(m[1]);
+  const mm = Number(m[2]);
+  const ss = m[3] ? Number(m[3]) : 0;
+
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59 || ss < 0 || ss > 59) return NaN;
+
+  return hh * 60 + mm; // segundos no impactan tus cálculos -> si querés incluir: + Math.floor(ss/60)
+}
+
+/** true si el string es hora válida (HH:mm o HH:mm:ss) y dentro de rango */
+private esHoraValida(hora: string | null | undefined): boolean {
+  return !isNaN(this.convertirAHora(hora));
+}
+
+/** determina si dos rangos [a,b) y [c,d) se solapan, en minutos */
+private rangosSeSolapan(aInicio: number, aFin: number, bInicio: number, bFin: number): boolean {
+  // Consideramos [inicio, fin) (semi-abierto) para permitir toques sin solape (ej: 08:00-10:00 y 10:00-11:00)
+  return aInicio < bFin && bInicio < aFin;
+}
 
   onHoraFinChange() {
     if (this.reporte.horaFin?.trim()) {
@@ -758,4 +804,14 @@ export class EditarReporteComponent implements OnInit {
       this.mostrarCompletar = false;
     }
   }
+
+  private recargarVista(): void {
+  this.cargarReporte();                 
+  this.detalleActual = null;            
+  this.detalleEditando = false;
+  this.mostrarHoraFin = false;
+  this.mostrarKmFin = false;
+  this.mostrarObservaciones = false;
+  this.mostrarCompletar = false;
+}
 }

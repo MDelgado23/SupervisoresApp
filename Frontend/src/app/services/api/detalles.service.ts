@@ -12,8 +12,8 @@ export class ReporteDetalleService {
 
   constructor(private http: HttpClient) {}
 
-  createDetalle(detalle: ReporteDetalle): Observable<ReporteDetalle> {
-  return this.http.post<ReporteDetalle>(`${this.baseUrl}`, detalle);
+  createDetalle(detalle: ReporteDetalle) {
+  return this.http.post<any>(`${this.baseUrl}`, detalle, { observe: 'response' });
 }
 
   updateDetalle(id: number, detalle: ReporteDetalle): Observable<ReporteDetalle> {

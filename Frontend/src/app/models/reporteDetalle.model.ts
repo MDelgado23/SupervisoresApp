@@ -1,4 +1,5 @@
 export interface ReporteDetalle {
+  id?: number; 
   objetivoId: number;
   horaEntrada: string;
   horaSalida: string;
