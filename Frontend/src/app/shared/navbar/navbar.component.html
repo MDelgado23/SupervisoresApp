@@ -1,0 +1,17 @@
+<nav class="navbar navbar-expand navbar-dark bg-dark px-4">
+  <a class="navbar-brand" routerLink="/dashboard">Supervisores App</a>
+
+  <ul class="navbar-nav me-auto">
+    <li class="nav-item" *ngIf="rol === 23">
+      <a class="nav-link" routerLink="/admin">Admin</a>
+    </li>
+    <li class="nav-item" *ngIf="rol === 13">
+      <a class="nav-link" routerLink="/reportes">Mis Reportes</a>
+    </li>
+    <li class="nav-item" *ngIf="rol === 12">
+      <a class="nav-link" routerLink="/controlador">Controlador</a>
+    </li>
+  </ul>
+
+  <button class="btn btn-outline-light btn-sm" (click)="logout()">Cerrar sesión</button>
+</nav>

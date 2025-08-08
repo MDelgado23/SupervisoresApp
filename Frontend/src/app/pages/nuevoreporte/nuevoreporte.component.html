@@ -1,0 +1,80 @@
+<div class="d-flex justify-content-center align-items-start bg-light min-vh-100 py-5 px-3">
+  <div class="card shadow-lg rounded p-4 w-100" style="max-width: 500px;">
+    <div class="text-center mb-4">
+      <h3 class="text-primary fw-bold mb-1">Nuevo Reporte Diario</h3>
+      <p class="text-muted small">Completá los datos iniciales para comenzar</p>
+    </div>
+
+    <!-- Usuario -->
+    <div class="mb-3">
+      <label class="form-label">Controlador</label>
+      <input
+        type="text"
+        class="form-control"
+        [value]="usuario?.fullName"
+        disabled
+      />
+    </div>
+
+    <!-- Fecha laboral -->
+    <div class="mb-3">
+      <label class="form-label">Fecha</label>
+      <input
+        type="text"
+        class="form-control"
+        [value]="fechaMostrada"
+        disabled
+      />
+    </div>
+
+    <!-- Hora inicio -->
+    <div class="mb-3" [@fadeIn]>
+      <label class="form-label">Hora Inicio</label>
+      <input
+        type="time"
+        class="form-control"
+        [(ngModel)]="reporte.horaInicio"
+        name="horaInicio"
+        required
+      />
+    </div>
+
+    <!-- Vehículo -->
+    <div class="mb-3" *ngIf="reporte.horaInicio" [@fadeIn]>
+      <label class="form-label">Vehículo</label>
+      <select
+        class="form-select"
+        [(ngModel)]="reporte.vehiculoId"
+        name="vehiculoId"
+        required
+      >
+        <option *ngFor="let vehiculo of vehiculos" [value]="vehiculo.id">
+          {{ vehiculo.patente }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Km inicio -->
+    <div class="mb-3" *ngIf="reporte.vehiculoId" [@fadeIn]>
+      <label class="form-label">Km Inicio</label>
+      <input
+        type="number"
+        class="form-control"
+        [(ngModel)]="reporte.kmInicio"
+        name="kmInicio"
+        required
+      />
+    </div>
+
+    <!-- Botón iniciar -->
+    <div class="d-grid" *ngIf="reporte.kmInicio > 0" [@fadeIn]>
+      <button
+        class="btn btn-primary"
+        (click)="iniciarSupervision()"
+        [disabled]="!formularioValido()"
+      >
+        Iniciar Supervisión
+      </button>
+    </div>
+  </div>
+</div>

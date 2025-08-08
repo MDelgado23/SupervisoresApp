@@ -1,0 +1,14 @@
+# Node
+node_modules/
+dist/
+
+# Angular cache
+.angular/
+
+# Compilados .NET
+bin/
+obj/
+
+# Configs locales
+.env
+*.local.json

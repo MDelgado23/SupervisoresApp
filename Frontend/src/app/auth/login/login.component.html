@@ -1,0 +1,49 @@
+<app-spinner />
+<div class="d-flex justify-content-center align-items-center bg-light min-vh-100 px-3 py-5">
+  <div class="card shadow-lg rounded p-4 w-100" style="max-width: 400px;">
+    <div class="text-center mb-4">
+      <h4 class="text-primary fw-bold">Iniciar Sesión</h4>
+      <p class="text-muted small mb-0">Accedé con tus credenciales</p>
+    </div>
+
+    <form #loginForm="ngForm" novalidate>
+      <!-- DNI -->
+      <div class="mb-3">
+        <label for="dni" class="form-label">DNI</label>
+        <input
+          type="text"
+          id="dni"
+          name="dni"
+          class="form-control"
+          required
+          [(ngModel)]="dni"
+          [disabled]="(loadingService.cargando$ | async) ?? false"
+        />
+      </div>
+
+      <!-- Contraseña -->
+      <div class="mb-4">
+        <label for="password" class="form-label">Contraseña</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-control"
+          required
+          [(ngModel)]="password"
+          [disabled]="(loadingService.cargando$ | async) ?? false"
+        />
+      </div>
+
+      <!-- Botón -->
+      <button
+  type="button"
+  class="btn btn-primary w-100"
+  (click)="loginConSpinner()"
+  [disabled]="loginForm.invalid || (loadingService.cargando$ | async) ?? false"
+>
+  {{ (loadingService.cargando$ | async) ? 'Ingresando...' : 'Ingresar' }}
+</button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,78 @@
+
+
+<div class="d-flex justify-content-center align-items-start bg-light min-vh-100 py-4 px-3">
+  <div class="card shadow-lg rounded-4 p-4 w-100" style="max-width: 800px;">
+    <!-- Encabezado -->
+    <div class="mb-4 text-center text-md-start">
+      <h4 class="fw-bold text-primary mb-1">Mis Reportes</h4>
+      <p *ngIf="reportes.length > 0" class="text-muted small mb-0">
+        Se muestran los reportes de los últimos <strong>{{ diasMostrados }}</strong> días.
+      </p>
+    </div>
+
+    <!-- Sin reportes -->
+    <div *ngIf="reportes.length === 0" class="text-muted text-center py-4">
+      No tenés reportes registrados aún.
+    </div>
+
+    <!-- Tabla de reportes -->
+    <div *ngIf="reportes.length > 0" class="table-responsive">
+      <table class="table table-borderless table-hover align-middle mb-0">
+        <!-- CABECERA -->
+<thead class="table-light d-none d-md-table-header-group">
+  <tr>
+    <th>Fecha</th>
+    <th class="text-center">Estado</th>
+    <th class="text-center">Acción</th>
+  </tr>
+</thead>
+
+<tbody>
+  <tr *ngFor="let reporte of reportes" class="border-bottom">
+    <!-- ✅ VISTA MOBILE -->
+    <td class="d-block d-md-none pb-3">
+      <div class="fw-semibold text-primary">
+        {{ reporte.fecha | date:'dd/MM/yyyy' }}
+      </div>
+      <div class="my-2">
+        <span
+          class="badge"
+          [ngClass]="reporte.finalizado ? 'bg-success' : 'bg-warning text-dark'"
+        >
+          {{ reporte.finalizado ? 'Finalizado' : 'En progreso' }}
+        </span>
+      </div>
+      <button
+        class="btn btn-outline-primary btn-sm w-100"
+        (click)="irAReporte(reporte.id)"
+      >
+        Ver Reporte
+      </button>
+    </td>
+
+    <!-- ✅ VISTA ESCRITORIO -->
+    <td class="d-none d-md-table-cell">
+      {{ reporte.fecha | date:'dd/MM/yyyy' }}
+    </td>
+    <td class="d-none d-md-table-cell text-center">
+      <span
+        class="badge"
+        [ngClass]="reporte.finalizado ? 'bg-success' : 'bg-warning text-dark'"
+      >
+        {{ reporte.finalizado ? 'Finalizado' : 'En progreso' }}
+      </span>
+    </td>
+    <td class="d-none d-md-table-cell text-center">
+      <button
+        class="btn btn-outline-primary btn-sm"
+        (click)="irAReporte(reporte.id)"
+      >
+        Ver Reporte
+      </button>
+    </td>
+  </tr>
+</tbody>
+      </table>
+    </div>
+  </div>
+</div>
